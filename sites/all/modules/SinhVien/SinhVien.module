@@ -1,0 +1,240 @@
+<?php
+if(!isset($_SESSION)){
+    session_start();
+}
+function SinhVien_menu()
+{
+
+    $items['home_home'] = array(
+        'title' => t('Trang Chủ'),
+        'description' => t('tranghome'),
+        'page callback' => 'home',
+        'access arguments' => array('access content'),
+        'type' => MENU_CALLBACK,
+    );
+
+    $items['addmonan'] = array(
+        'title' => t('Thêm món ăn'),
+        'description' => t('themmonan'),
+        'page callback' => 'add_monan',
+        'access arguments' => array('access content'),
+        'type' => MENU_CALLBACK,
+    );
+
+    $items['dangki'] = array(
+        'title' => t('Đăng kí'),
+        'description' => t('dangkinguoidung'),
+        'page callback' => 'dang_ki',
+        'access arguments' => array('access content'),
+        'type' => MENU_CALLBACK,
+    );
+
+    $items['dangnhap'] = array(
+        'title' => t('Đăng nhập'),
+        'description' => t('dangnhapnguoidung'),
+        'page callback' => 'dang_nhap',
+        'access arguments' => array('access content'),
+        'type' => MENU_CALLBACK,
+    );
+
+    $items['displaycook'] = array(
+        'title' => t('Món ăn'),
+        'description' => t('dangkinguoidung'),
+        'page callback' => 'display_cook',
+        'access arguments' => array('access content'),
+        'type' => MENU_CALLBACK,
+    );
+
+    $items['listmonan'] = array(
+        'title' => t('Món ăn'),
+        'description' => t('list_mon_an'),
+        'page callback' => 'list_monan',
+        'access arguments' => array('access content'),
+        'type' => MENU_CALLBACK,
+    );
+
+    $items['dangxuat'] = array(
+        'title' => t('Đăng xuất'),
+        'description' => t('dang_xuat'),
+        'page callback' => 'dang_xuat',
+        'access arguments' => array('access content'),
+        'type' => MENU_CALLBACK,
+    );
+    $items['search_monan'] = array(
+        'title' => t('search mon an'),
+        'description' => t('search mon an'),
+        'page callback' => 'search',
+        'access arguments' => array('access content'),
+        'type' => MENU_CALLBACK,
+    );
+
+    return $items;
+}
+
+function SinhVien_init()
+{
+    drupal_add_js(drupal_get_path('module','SinhVien').'/js/SinhVien.js');
+    drupal_add_css(drupal_get_path('module','SinhVien').'/css/sinhvien.css');
+}
+function SinhVien_theme()
+{
+
+    $themes['Home'] = array('template' => 'templates/Home', 'arguments' => array('data'=>'') );
+    $themes['DangKi'] = array('template' => 'templates/DangKi', 'arguments' => array('data'=>'') );
+    $themes['Dangnhap'] = array('template' => 'templates/Dangnhap', 'arguments' => array('data'=>'') );
+    $themes['Addmonan'] = array('template' => 'templates/Addmonan', 'arguments' => array('data'=>'') );
+    $themes['Displaycook'] = array('template' => 'templates/Displaycook', 'arguments' => array('data'=>'') );
+    $themes['DangKi'] = array('template' => 'templates/DangKi', 'arguments' => array('data'=>'') );
+    $themes['listmonan'] = array('template' => 'templates/listmonan', 'arguments' => array('data'=>'') );
+    $themes['dangxuat'] = array('template' => 'templates/dangxuat', 'arguments' => array('data'=>'') );
+    $themes['Search'] = array('template' => 'templates/Search', 'arguments' => array('data'=>'') );
+    return $themes;
+
+}
+
+function get_node_by_type($type) {
+    $query = db_select('node', 'n');
+    $query->fields('n');
+    $query->condition("n.type",$type);
+    $data = $query->execute()->fetchAll();
+    return $data;
+}
+
+function home() {
+    $id = arg(1);
+    $data = null;
+    $query = db_select('bangcongthuc', 'b');
+    $query->fields('b');
+//    $query->condition('b.Id',$id,'=');
+    $data = $query->execute()->fetchAll();
+  //  print_r($data);
+    return theme('Home', array('data' => $data));
+
+}
+
+function dang_ki() {
+    $data = null;
+    if($_POST){
+//        $errors= array();
+//        $file_name = $_FILES['UploadedFile']['name'];
+//        $file_tmp = $_FILES['UploadedFile']['tmp_name'];
+//        $expensions= array("jpeg","jpg","png");
+//        move_uploaded_file($file_tmp, "C:/xampp/htdocs/Let_Cook/sites/all/modules/SinhVien/css/images/$file_name") ;
+        $id = db_insert('banguser')->fields(array(
+            'TenUser' =>$_POST['fullname'],
+            'Email' =>$_POST['email'],
+            'Password' =>$_POST['password'],
+        ))->execute();
+        drupal_goto('home_home/'.$id);
+    }
+    return theme('DangKi', array('data' => $data));
+}
+
+function dang_nhap() {
+    $id = arg(1);
+    $data = null;
+    $query = db_select('banguser', 'b');
+    $query->fields('b');
+    $query->condition('b.Id',$id,'=');
+    $data = $query->execute()->fetchObject();
+    if(isset($_POST['btn_submit'])){
+        print_r('ababababa');
+        $email = isset($_POST['email'])?$_POST['email']:'';
+        $pass = isset($_POST['pass'])?$_POST['pass']:'';
+        $query = db_select('banguser', 'b');
+        $query->fields('b');
+        $query->condition('b.Email',$email,'=');
+        $query->condition('b.Password',$pass,'=');
+        $data = $query->execute()->fetchObject();
+        $tenuser = $data->TenUser;
+        $_SESSION['tenuser']= $tenuser;
+        $id1 = $data->Id;
+        if($id1!=""){
+            drupal_goto('home_home/'.$id1);
+        }
+    }
+    return theme('Dangnhap', array('data' => $data));
+}
+
+function display_cook()
+{
+    $id = arg(1 );
+    $data = null;
+    $query = db_select('bangcongthuc', 'b');
+    $query->fields('b');
+    $query->condition('b.Id',$id,'=');
+    $data = $query->execute()->fetchAll();
+    return theme('Displaycook', array('data' => $data));
+}
+
+function add_monan() {
+    $data = null;
+    $query = db_select('bangcongthuc', 'b');
+    $query->fields('b');
+    $data = $query->execute()->fetchAll();
+    if(isset($_POST['create']))
+    {
+        $file_name = $_FILES['anh']['name'];
+        $file_tmp = $_FILES['anh']['tmp_name'];
+        $file_name1 = $_FILES['anh1']['name'];
+        $file_tmp1 = $_FILES['anh1']['tmp_name'];
+        $file_name2 = $_FILES['anh2']['name'];
+        $file_tmp2 = $_FILES['anh2']['tmp_name'];
+        $file_name3 = $_FILES['anh3']['name'];
+        $file_tmp3 = $_FILES['anh3']['tmp_name'];
+        move_uploaded_file($file_tmp, "C:/xampp/htdocs/Let_Cook/sites/all/modules/SinhVien/css/images/$file_name") ;
+        move_uploaded_file($file_tmp1, "C:/xampp/htdocs/Let_Cook/sites/all/modules/SinhVien/css/images/$file_name1") ;
+        move_uploaded_file($file_tmp2, "C:/xampp/htdocs/Let_Cook/sites/all/modules/SinhVien/css/images/$file_name2") ;
+        move_uploaded_file($file_tmp3, "C:/xampp/htdocs/Let_Cook/sites/all/modules/SinhVien/css/images/$file_name3") ;
+        $id = db_insert('bangcongthuc')->fields(array(
+            'IMGmonan' =>$file_name,
+            'TenCongThuc' => $_POST['tencongthuc'],
+            'NoiDungMoTa' => $_POST['motamonan'],
+            'NguyenLieu' => $_POST['nguyenlieu'],
+            'Buoc1' => $_POST['cachlamb1'],
+            'IMGbuoc1' => $file_name1,
+            'Buoc2' => $_POST['cachlamb2'],
+            'IMGbuoc2' => $file_name2,
+            'Buoc3' => $_POST['cachlamb3'],
+            'IMGbuoc3' => $file_name3,
+        ))->execute();
+
+        drupal_goto('listmonan/');
+
+    }
+
+
+    return theme('Addmonan', array('data' => $data));
+
+}
+
+function list_monan() {
+//    $id = arg(1 );
+    $data = null;
+    $query = db_select('bangcongthuc', 'b');
+    $query->fields('b');
+//    $query->condition('b.Id',$id,'=');
+    $data = $query->execute()->fetchAll();
+    return theme('listmonan', array('data' => $data));
+}
+
+function dang_xuat() {
+    $data = null;
+    unset($_SESSION['tenuser']);
+    session_destroy();
+    drupal_goto('home_home');
+    return theme('dangxuat', array('data' => $data));
+
+}
+
+function search() {
+    $id = arg(1);
+    $data = null;
+    $query = db_select('bangcongthuc', 'b');
+    $query->fields('b');
+    $keyword = $_POST['url'];
+    $keyword = '%'.$keyword.'%';
+    $query->condition('b.TenCongThuc',$keyword,'LIKE');
+    $data = $query->execute()->fetchAll();
+    return theme('Search', array('data' => $data));
+}
